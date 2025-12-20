@@ -10,9 +10,17 @@ const app = express();
 const PORT = config.port;
 connectDB();
 
+//Middleware to parse JSON requests
+app.use(express.json());
+
+
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to the POS Backend" });
 });
+
+//User Routes
+app.use("/api/user", require("./routes/userRoute"))
+
 
 //Global Errror Handler Middleware
 app.use(globalErrorHandler);
