@@ -5,6 +5,7 @@ const connectDB = require("./config/database");
 const config = require("./config/config");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const createHttpError = require("http-errors");
+const cookieParser = require("cookie-parser");
 const app = express();
 
 const PORT = config.port;
@@ -12,6 +13,7 @@ connectDB();
 
 //Middleware to parse JSON requests
 app.use(express.json());
+app.use(cookieParser());
 
 
 app.get("/", (req, res) => {
