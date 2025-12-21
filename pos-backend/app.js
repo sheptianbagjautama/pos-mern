@@ -4,7 +4,6 @@ const express = require("express");
 const connectDB = require("./config/database");
 const config = require("./config/config");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
-const createHttpError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const app = express();
 
@@ -15,14 +14,14 @@ connectDB();
 app.use(express.json());
 app.use(cookieParser());
 
-
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to the POS Backend" });
 });
 
 //User Routes
-app.use("/api/user", require("./routes/userRoute"))
-
+app.use("/api/user", require("./routes/userRoute"));
+//Order Routes
+app.use("/api/order", require("./routes/orderRoute"));
 
 //Global Errror Handler Middleware
 app.use(globalErrorHandler);
