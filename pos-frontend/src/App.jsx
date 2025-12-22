@@ -1,24 +1,37 @@
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom"
-import { Auth, Home, Menu, Orders, Tables } from "./pages"
-import Header from "./components/shared/Header"
+import {
+  Route,
+  BrowserRouter as Router,
+  Routes,
+  useLocation,
+} from "react-router-dom";
+import { Auth, Home, Menu, Orders, Tables } from "./pages";
+import Header from "./components/shared/Header";
 
-function App() {
+function Layout() {
+  const location = useLocation();
+  const hideHeaderRoutes = ["/auth"];
 
   return (
     <>
-    <Header/>
-    <Router>
+      {!hideHeaderRoutes.includes(location.pathname) && <Header />}
       <Routes>
-        <Route path="/" element={<Home/>}/>
-        <Route path="/auth" element={<Auth/>}/>
-        <Route path="/orders" element={<Orders/>}/>
-        <Route path="/tables" element={<Tables/>}/>
-        <Route path="/menu" element={<Menu/>}/>
-        <Route path="*" element={<div>Page Not Found</div>}/>
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/tables" element={<Tables />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="*" element={<div>Page Not Found</div>} />
       </Routes>
-    </Router>
     </>
-  )
+  );
 }
 
-export default App
+function App() {
+  return (
+    <Router>
+      <Layout />
+    </Router>
+  );
+}
+
+export default App;
