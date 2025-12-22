@@ -12,6 +12,7 @@ connectDB();
 
 //Middleware to parse JSON requests
 app.use(express.json());
+//Middleware to parse cookies
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
@@ -22,10 +23,13 @@ app.get("/", (req, res) => {
 app.use("/api/user", require("./routes/userRoute"));
 //Order Routes
 app.use("/api/order", require("./routes/orderRoute"));
+//Table Routes
+app.use("/api/table", require("./routes/tableRoute"));
 
 //Global Errror Handler Middleware
 app.use(globalErrorHandler);
 
+//Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
