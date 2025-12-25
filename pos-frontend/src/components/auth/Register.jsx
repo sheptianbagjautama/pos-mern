@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { register } from "../../https";
+import { useMutation } from "@tanstack/react-query";
+import { enqueueSnackbar } from "notistack";
 
-function Register() {
+function Register({ setIsRegister }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,8 +22,36 @@ function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
+    registerMutation.mutate(formData); // Trigger the register mutation
   };
+
+  // Define the register mutation
+  const registerMutation = useMutation({
+    mutationFn: (reqData) => register(reqData), // Call the register API
+    onSuccess: (res) => {
+      // Handle successful registration
+      const { data } = res;
+      enqueueSnackbar(data.message, { variant: "success" });
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        role: "",
+      });
+
+      setTimeout(() => {
+        setIsRegister(false);
+      }, 1500)
+    },
+    onError: (error) => {
+      // Handle registration error
+      const { response } = error;
+      enqueueSnackbar(response?.data?.message || "Registration failed", {
+        variant: "error",
+      });
+    },
+  });
 
   return (
     <div>

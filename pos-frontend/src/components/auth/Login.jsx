@@ -1,6 +1,15 @@
 import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { login } from "../../https";
+import { enqueueSnackbar } from "notistack";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/slices/userSlice";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -12,13 +21,30 @@ function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
+    loginMutation.mutate(formData); // Trigger the login mutation
   };
+
+  // Define the login mutation
+  const loginMutation = useMutation({
+    mutationFn: (reqData) => login(reqData), // Call the login API
+    onSuccess: (res) => { // Handle successful login
+      const { data } = res;
+      console.log("Login successful:", data);
+      const { _id, name, email, phone, role } = data.data;
+      dispatch(setUser({ _id, name, email, phone, role })); // Update user state in Redux
+      navigate("/");
+      enqueueSnackbar(`Welcome back, ${name}!`, {variant: 'success'});
+    },
+    onError: (error) => { // Handle login error
+      const { response } = error;
+      enqueueSnackbar(response?.data?.message || 'Login failed', {variant: 'error'});
+    },
+  });
 
   return (
     <div>
       {" "}
-      <form onClick={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         {/* Employee Email */}
         <div>
           <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium">
