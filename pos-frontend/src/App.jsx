@@ -5,7 +5,7 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import { Auth, Home, Menu, Orders, Tables } from "./pages";
+import { Auth, Dashboard, Home, Menu, Orders, Tables } from "./pages";
 import Header from "./components/shared/Header";
 import { useSelector } from "react-redux";
 import useLoadData from "./hooks/useLoadData";
@@ -17,8 +17,6 @@ function Layout() {
   const hideHeaderRoutes = ["/auth"];
   const { isAuth } = useSelector((state) => state.user);
 
-  console.log("isLoading:", isLoading);
-  
   if(isLoading) {
      return <FullScreenLoader/>
   }
@@ -62,6 +60,15 @@ function Layout() {
           element={
             <ProtectedRoutes>
               <Menu />
+            </ProtectedRoutes>
+          }
+        />
+         {/* Dashboard Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoutes>
+              <Dashboard />
             </ProtectedRoutes>
           }
         />

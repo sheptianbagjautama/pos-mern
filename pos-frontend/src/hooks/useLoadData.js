@@ -13,8 +13,6 @@ const useLoadData = () => {
     const fetchUser = async () => {
       try {
         const { data } = await getUserData();
-        console.log("User Data:", data);
-
         const { _id, name, email, phone, role } = data.data;
         dispatch(setUser({ _id, name, email, phone, role })); // Update user state in Redux
       } catch (error) {

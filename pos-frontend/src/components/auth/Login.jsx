@@ -29,7 +29,6 @@ function Login() {
     mutationFn: (reqData) => login(reqData), // Call the login API
     onSuccess: (res) => { // Handle successful login
       const { data } = res;
-      console.log("Login successful:", data);
       const { _id, name, email, phone, role } = data.data;
       dispatch(setUser({ _id, name, email, phone, role })); // Update user state in Redux
       navigate("/");
