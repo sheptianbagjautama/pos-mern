@@ -32,6 +32,8 @@ app.use("/api/user", require("./routes/userRoute"));
 app.use("/api/order", require("./routes/orderRoute"));
 //Table Routes
 app.use("/api/table", require("./routes/tableRoute"));
+//Payment Routes
+app.use("/api/payment", require("./routes/paymentRoute"));
 
 //Global Errror Handler Middleware
 app.use(globalErrorHandler);

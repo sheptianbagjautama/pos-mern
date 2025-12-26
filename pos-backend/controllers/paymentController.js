@@ -1,0 +1,81 @@
+const Razorpay = require("razorpay");
+const config = require("../config/config");
+const crypto = require("crypto");
+
+const createOrder = async (req, res, next) => {
+  const razorpay = new Razorpay({
+    key_id: config.razorpayKeyId,
+    key_secret: config.razorpayKeySecret,
+  });
+
+  try {
+    const { amount } = req.body;
+    const options = {
+      amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+    };
+
+    const order = await razorpay.order.create(options);
+    res.status(200).json({ success: true, order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const verityPayment = async (req, res, next) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", config.razorpaySecretKey)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (expectedSignature === razorpay_signature) {
+      res.json({ success: true, message: "Payment verified successfully!" });
+    } else {
+      const error = createHttpError(400, "Payment verification failed!");
+      return next(error);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+const webHookVerification = (req, res, next) => {
+  try {
+    const secret = config.razorpayWebhookSecret;
+    const signature = req.headers["x-razorpay-signature"];
+
+    const body = JSON.stringify(req.body); // Convert payload to string
+
+    // 🛑 Verify the signature
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature === signature) {
+      console.log("✅ Webhook verified:", req.body);
+
+      // ✅ Process payment (e.g., update DB, send confirmation email)
+      if (req.body.event === "payment.captured") {
+        const payment = req.body.payload.payment.entity;
+        console.log(`💰 Payment Captured: ${payment.amount / 100} INR`);
+        // Update database, send email, etc.
+      }
+
+      res.json({ success: true });
+    } else {
+      const error = createHttpError(400, "❌ Invalid Signature!");
+      return next(error);
+    }
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+module.exports = { createOrder, verityPayment, webHookVerification };
