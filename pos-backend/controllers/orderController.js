@@ -44,7 +44,7 @@ const getOrderById = async (req, res, next) => {
 
 const getOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find();
+    const orders = await Order.find().populate("table");
     res.status(200).json({ data: orders });
   } catch (error) {
     return next(error);
@@ -60,6 +60,8 @@ const updateOrder = async (req, res, next) => {
       const error = createHttpError(400, "Invalid order ID !");
       return next(error);
     }
+
+    console.log("Updating order:", id, "with status:", orderStatus);
 
     const order = await Order.findByIdAndUpdate(
       id,

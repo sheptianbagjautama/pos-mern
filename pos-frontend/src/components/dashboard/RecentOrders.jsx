@@ -1,9 +1,38 @@
 import React from "react";
 import { orders } from "../../constants/pos_system_constants";
 import { GrUpdate } from "react-icons/gr";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getOrders, updateOrderStatus } from "../../https";
+import { enqueueSnackbar } from "notistack";
+import { formatDateAndtime } from "../../utils";
 
 const RecentOrders = () => {
-    const handleStatusChange = () => {};
+  const queryClient = useQueryClient(); // Get the query client instance
+  const handleStatusChange = ({orderId, orderStatus}) => {
+    orderStatusMutation.mutate({ orderId, orderStatus });
+  };
+
+  const orderStatusMutation = useMutation({
+    mutationFn: ({ orderId, orderStatus }) => updateOrderStatus({ orderId, orderStatus }),
+    onSuccess:(data) => {
+      enqueueSnackbar("Order status updated successfully", { variant: "success" });
+      queryClient.invalidateQueries(["orders"]); // Invalidate and refetch orders query
+    },
+  })
+
+  const { data: resData, isError } = useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      return await getOrders();
+    },
+    placeholderData: keepPreviousData,
+  });
+
+  if (isError) {
+    enqueueSnackbar("Something went wrong", { variant: "error" });
+  }
+
+  console.log("Recent Orders Data:", resData);
 
   return (
     <div className="container mx-auto bg-[#262626] p-4 rounded-lg">
@@ -25,39 +54,41 @@ const RecentOrders = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order, index) => {
+            {resData?.data?.data.map((order, index) => {
               return (
                 <tr
                   key={index}
                   className="border-b border-gray-600 hover:bg-[#333]"
                 >
-                  <td className="p-4">#{order.id}</td>
-                  <td className="p-4">{order.customer}</td>
+                  <td className="p-4">#{Math.floor(new Date(order.orderDate).getTime())}</td>
+                  <td className="p-4">{order.customerDetails.name}</td>
                   <td className="p-4">
                     <select
                       className={`bg-[#1a1a1a] text-[#f5f5f5] border border-gray-500 p-2 rounded-lg focus:outline-none ${
-                        order.status === "Ready"
+                        order.orderStatus === "Ready"
                           ? "text-green-500"
                           : "text-yellow-500"
                       }`}
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(index, e.target.value)}
+                      value={order.orderStatus}
+                      onChange={(e) =>
+                        handleStatusChange({orderId: order._id, orderStatus: e.target.value})
+                      }
                     >
-                        <option value="In Progress" className="text-yellow-500">
-                            In Progress
-                        </option>
-                        <option value="Ready" className="text-green-500">
-                            Ready
-                        </option>
+                      <option value="In Progress" className="text-yellow-500">
+                        In Progress
+                      </option>
+                      <option value="Ready" className="text-green-500">
+                        Ready
+                      </option>
                     </select>
                   </td>
-                  <td className="p-4">{order.dateTime}</td>
-                  <td className="p-4">{order.items}</td>
-                  <td className="p-4">Table - {order.tableNo}</td>
-                  <td className="p-4">${order.total.toFixed(2)}</td>
+                  <td className="p-4">{formatDateAndtime(new Date(order.createdAt))}</td>
+                  <td className="p-4">{order.items.length}</td>
+                  <td className="p-4">Table - {order.table?.tableNo || "N/A"}</td>
+                  <td className="p-4">${order.bills.totalWithTax.toFixed(2)}</td>
                   <td className="p-4 text-center">
                     <button className="text-blue-400 hover:text-blue-500 transition">
-                        <GrUpdate size={20}/>
+                      <GrUpdate size={20} />
                     </button>
                   </td>
                 </tr>

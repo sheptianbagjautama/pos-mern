@@ -49,3 +49,17 @@ export const formatTime = (date) =>
   `${String(date.getHours()).padStart(2, "0")}:${String(
     date.getMinutes()
   ).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+
+  export const formatDateAndtime = (data) => {
+    const dateAndTime = new Date(data).toLocaleDateString("en-US", {
+      month: "long",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone:"Asia/Kolkata",
+    });
+    return dateAndTime;
+  };
