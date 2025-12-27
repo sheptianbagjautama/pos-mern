@@ -40,9 +40,9 @@ function Register({ setIsRegister }) {
         role: "",
       });
 
-      setTimeout(() => {
+      // setTimeout(() => {
         setIsRegister(false);
-      }, 1500)
+      // }, 1500)
     },
     onError: (error) => {
       // Handle registration error
@@ -132,7 +132,7 @@ function Register({ setIsRegister }) {
                   key={role}
                   type="button"
                   className={`bg-[#1f1f1f] px-4 py-3 w-full rounded-lg text-[#ababab] ${
-                    formData.role === role ? "bg-indigo-700" : ""
+                    formData.role === role ? "bg-indigo-700 text-white" : "cursoor-pointer hover:bg-[#333333] text-white"
                   }`}
                 >
                   {role}
@@ -144,7 +144,7 @@ function Register({ setIsRegister }) {
 
         <button
           type="submit"
-          className="w-full rounded-lg mt-6 py-3 text-lg bg-yellow-400 text-gray-900 font-bold"
+          className="w-full rounded-lg mt-6 py-3 text-lg bg-yellow-400 cursor-pointer hover:bg-yellow-500 text-gray-900 font-bold"
         >
           Sign up
         </button>

@@ -55,7 +55,7 @@ function Auth() {
             &nbsp;
             <a
               onClick={() => setIsRegister(!isRegister)}
-              className="text-yellow-400 font-semibold hover:underline"
+              className="text-yellow-400 font-semibold hover:underline cursor-pointer"
               href="#"
             >
               {isRegister ? "Sign in" : "Sign up"}
