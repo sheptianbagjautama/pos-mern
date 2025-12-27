@@ -43,7 +43,7 @@ function RecentOrder() {
         {/* ORDER LIST */}
         <div className="mt-4 px-6 overflow-y-scroll h-75 scrollbar-hide">
           {resData?.data?.data.length > 0 ? (
-            resData.data.data.map((order) => {
+            resData.data.data.map((order, index) => {
               return <OrderList key={order._id} order={order} />;
             })
           ) : (

@@ -4,6 +4,7 @@ const { default: mongoose } = require("mongoose");
 
 const addOrder = async (req, res, next) => {
   try {
+    console.log("Adding new order with data:", req.body);
     const order = new Order(req.body);
     await order.save();
 
@@ -13,6 +14,7 @@ const addOrder = async (req, res, next) => {
       data: order,
     });
   } catch (error) {
+    console.error("Error adding order:", error);
     return next(error);
   }
 };

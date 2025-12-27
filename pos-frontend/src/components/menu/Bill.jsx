@@ -2,9 +2,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { getTotalPrice, removeAllItems } from "../../redux/slices/cartSlice";
 import { useState } from "react";
 import { enqueueSnackbar } from "notistack";
-import { addOrder, createOrderRazorpay, updateTable, verifyPaymentRazorpay } from "../../https";
+import {
+  addOrder,
+  createOrderRazorpay,
+  updateTable,
+  verifyPaymentRazorpay,
+} from "../../https";
 import { useMutation } from "@tanstack/react-query";
 import { removeCustomer } from "../../redux/slices/customerSlice";
+import Invoice from "../invoice/Invoice";
 
 /**
  * Explaination: This function dynamically loads an external JavaScript file by creating a script element and appending it to the document body. It returns a promise that resolves to true if the script loads successfully, or false if there is an error during loading.
@@ -33,6 +39,8 @@ function Bill() {
   const totalPriceWithTax = total + tax;
 
   const [paymentMethod, setPaymentMethod] = useState();
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [orderInfo, setOrderInfo] = useState();
 
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
@@ -41,86 +49,117 @@ function Bill() {
     }
 
     try {
-      // Load Razorpay script
-      const res = await loadScript(
-        "https://checkout.razorpay.com/v1/checkout.js"
-      );
+      if (paymentMethod === "Online") {
+        // Load Razorpay script
+        const res = await loadScript(
+          "https://checkout.razorpay.com/v1/checkout.js"
+        );
 
-      // Handle script load failure
-      if (!res) {
-        enqueueSnackbar("Razorpay SDK failed to load. Are you online?", {
-          variant: "warning",
-        });
-        return;
+        // Handle script load failure
+        if (!res) {
+          enqueueSnackbar("Razorpay SDK failed to load. Are you online?", {
+            variant: "warning",
+          });
+          return;
+        }
+
+        // Create order on the server
+        const reqData = {
+          amount: totalPriceWithTax.toFixed(2),
+        };
+
+        const { data } = await createOrderRazorpay(reqData);
+
+        const options = {
+          key: `${import.meta.env.VITE_RAZORPAY_KEY_ID}`,
+          amount: data.order.amount,
+          currency: data.order.currency,
+          name: "RESTRO",
+          description: "Secure Payment for Your Meal",
+          order_id: data.order.id,
+          handler: async function (response) {
+            const verification = await verifyPaymentRazorpay(response);
+            console.log(verification);
+            enqueueSnackbar(verification.data.message, { variant: "success" });
+
+            // Place the order
+            const orderData = {
+              customerDetails: {
+                name: customerData.customerName,
+                phone: customerData.customerPhone,
+                guests: customerData.guest,
+              },
+              orderStatus: "In Progress",
+              bills: {
+                total: total,
+                tax: tax,
+                totalWithTax: totalPriceWithTax,
+              },
+              items: cartData,
+              table: customerData.table.tableId,
+              paymentMethod: paymentMethod,
+              paymentData: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+              },
+            };
+
+            setTimeout(() => {
+              orderMutation.mutate(orderData);
+            }, 1500);
+          },
+          prefill: {
+            name: customerData.name,
+            email: "",
+            contact: customerData.phone,
+          },
+          theme: { color: "#025cca" },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        console.log("Cash Payment Selected");
+        // Place the order
+        const orderData = {
+          customerDetails: {
+            name: customerData.customerName,
+            phone: customerData.customerPhone,
+            guests: customerData.guest,
+          },
+          orderStatus: "In Progress",
+          bills: {
+            total: total,
+            tax: tax,
+            totalWithTax: totalPriceWithTax,
+          },
+          items: cartData,
+          table: customerData.table.tableId,
+          paymentMethod: paymentMethod,
+        };
+
+        console.log("Order Data:", orderData);
+
+        orderMutation.mutate(orderData);
       }
-
-      // Create order on the server
-      const reqData = {
-        amount: totalPriceWithTax.toFixed(2),
-      };
-
-      const { data } = await createOrderRazorpay(reqData);
-
-      const options = {
-        key: `${import.meta.env.VITE_RAZORPAY_KEY_ID}`,
-        amount: data.order.amount,
-        currency: data.order.currency,
-        name: "RESTRO",
-        description: "Secure Payment for Your Meal",
-        order_id: data.order.id,
-        handler: async function (response) {
-          const verification = await verifyPaymentRazorpay(response);
-          console.log(verification);
-          enqueueSnackbar(verification.data.message, { variant: "success" });
-
-          // Place the order
-          const orderData = {
-            customerDetails: {
-              name: customerData,
-              phone: customerData.customerPhone,
-              guest: customerData.guests,
-            },
-            orderStatus: "In Progress",
-            bills: {
-              total: total,
-              tax: tax,
-              totalWithTax: totalPriceWithTax,
-            },
-            items: cartData,
-            table: customerData.table.tableId,
-          };
-
-          setTimeout(() => {
-            orderMutation.mutate(orderData);
-          },1500);
-        },
-        prefill: {
-          name: customerData.name,
-          email: "",
-          contact: customerData.phone,
-        },
-        theme: { color: "#025cca" },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
     } catch (error) {
-      console.log("Razorpay Error:", error);
+      console.log("Payment Error:", error);
       enqueueSnackbar("Payment failed", { variant: "error" });
     }
   };
 
   const orderMutation = useMutation({
-    mutationFn:(reqData) => addOrder(reqData),
+    mutationFn: (reqData) => addOrder(reqData),
     onSuccess: (resData) => {
-      const {data} = resData.data;
+      const { data } = resData.data;
       console.log("Order placed successfully:", data);
+      setOrderInfo(data);
 
       // Update Table
       const tableData = {
         status: "Booked",
-        orderId:data._id,
-        tableId:data.table
+        orderId: data._id,
+        tableId: data.table,
       };
 
       setTimeout(() => {
@@ -128,23 +167,24 @@ function Bill() {
       }, 1500);
 
       enqueueSnackbar("Order Placed!", { variant: "success" });
+      setShowInvoice(true);
     },
-    onError:(error) => {
+    onError: (error) => {
       console.log("Order placement failed:", error);
     },
   });
 
   const tableUpdateMutation = useMutation({
-    mutationFn:(reqData) => updateTable(reqData),
+    mutationFn: (reqData) => updateTable(reqData),
     onSuccess: (resData) => {
-      console.log(resData)
+      console.log(resData);
       dispatch(removeCustomer());
       dispatch(removeAllItems());
     },
-    onerror:(error) => {
+    onerror: (error) => {
       console.log("Table update failed:", error);
-    }
-  })
+    },
+  });
 
   return (
     <>
@@ -190,7 +230,7 @@ function Bill() {
       </div>
 
       <div className="flex items-center gap-3 px-5 mt-4">
-        <button className="bg-[#025cca] px-4 py-3 w-full rounded-lg text-[#f5f5f5] font-semibold text-lg">
+        <button onClick={() => setShowInvoice(true)} className="bg-[#025cca] px-4 py-3 w-full rounded-lg text-[#f5f5f5] font-semibold text-lg">
           Print Receipt
         </button>
         <button
@@ -200,6 +240,10 @@ function Bill() {
           Place Order
         </button>
       </div>
+
+      {showInvoice && (
+        <Invoice orderInfo={orderInfo} setShowInvoice={setShowInvoice} />
+      )}
     </>
   );
 }
